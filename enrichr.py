@@ -1,8 +1,9 @@
+#! /usr/bin/python
 # Script to perform Enrichr enrichment analysis (http://amp.pharm.mssm.edu/Enrichr/)
 # Based on code available on enrichr website, 
 # adapted by wdecoster
 
-import json, requests, sys, os
+import pandas, json, requests, sys, io, os
 
 
 
@@ -47,7 +48,7 @@ def askgenelist(id, inlist):
 	print('{} genes succesfully recognized by enrichR'.format(returnedN))
 
 def whichdb():
-	standarddb = ['KEGG_2015', 'BioCarta_2016', 'WikiPathways_2016', 'Reactome_2016', 'GO_Biological_Process_2015', 'GO_Cellular_Component_2015', 'GO_Molecular_Function_2015', 'MSigDB_Computational', 'Panther_2016']	
+	standarddb = ['KEGG_2016', 'BioCarta_2016', 'WikiPathways_2016', 'Reactome_2016', 'GO_Biological_Process_2015', 'GO_Cellular_Component_2015', 'GO_Molecular_Function_2015', 'MSigDB_Computational', 'Panther_2016']	
 	if len(sys.argv) >= 3:
 		chosendb = [db for db in sys.argv[2:] if db in databases]
 		if chosendb:
@@ -73,17 +74,38 @@ def procesinput():
 	print('Input contains {} unique gene names'.format(len(genes)))	
 	return genes
 
+# def getresults(id, gene_set_library):
+# 	filename = gene_set_library + '_enrichment'
+# 	url = 'http://amp.pharm.mssm.edu/Enrichr/export?userListId=%s&filename=%s&backgroundType=%s' % (id, filename, gene_set_library)
+# 	response = requests.get(url, stream=True)
+# 	with open(filename + '.txt', 'wb') as output:
+# 		for chunk in response.iter_content(chunk_size=1024): 
+# 			if chunk:
+# 				output.write(chunk)
+
 def getresults(id, gene_set_library):
 	filename = gene_set_library + '_enrichment'
 	url = 'http://amp.pharm.mssm.edu/Enrichr/export?userListId=%s&filename=%s&backgroundType=%s' % (id, filename, gene_set_library)
 	response = requests.get(url, stream=True)
-	with open(filename + '.txt', 'wb') as output:
-		for chunk in response.iter_content(chunk_size=1024): 
-			if chunk:
-				output.write(chunk)
+	return response.text
+
+
 
 genelist = procesinput()				
 id = senddata(genelist)
+if os.path.isfile(sys.argv[1]):
+	fn = sys.argv[1] + ".xlsx"
+else:
+	fn = 'output.xlsx'
+
+writer = pandas.ExcelWriter(fn)
 for db in whichdb():	
-	getresults(id, db)
+	res = getresults(id, db)
+	df = pandas.read_table(io.StringIO(res))
+	df.to_excel(writer, sheet_name=db, index=False)
+	writer.save()
+
+
+
+
 
