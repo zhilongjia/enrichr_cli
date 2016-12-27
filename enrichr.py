@@ -6,7 +6,6 @@
 import pandas, json, requests, sys, io, os
 
 
-
 databases = ['Achilles_fitness_decrease', 'Achilles_fitness_increase', 'Aging_Perturbations_from_GEO_down', 'Aging_Perturbations_from_GEO_up', 
 	'Allen_Brain_Atlas_down', 'Allen_Brain_Atlas_up', 'BioCarta_2013', 'BioCarta_2015', 'BioCarta_2016', 'Cancer_Cell_Line_Encyclopedia', 'ChEA_2013', 'ChEA_2015',
 	'Chromosome_Location', 'CORUM', 'dbGaP', 'Disease_Perturbations_from_GEO_down', 'Disease_Perturbations_from_GEO_up', 'Disease_Signatures_from_GEO_down_2014', 'Disease_Signatures_from_GEO_up_2014',
@@ -23,6 +22,14 @@ databases = ['Achilles_fitness_decrease', 'Achilles_fitness_increase', 'Aging_Pe
 	'Phosphatase_Substrates_from_DEPOD', 'PPI_Hub_Proteins', 'Reactome_2013', 'Reactome_2015', 'Reactome_2016', 'SILAC_Phosphoproteomics', 'Single_Gene_Perturbations_from_GEO_down',
 	'Single_Gene_Perturbations_from_GEO_up', 'TargetScan_microRNA', 'TF-LOF_Expression_from_GEO', 'Tissue_Protein_Expression_from_Human_Proteome_Map', 'Tissue_Protein_Expression_from_ProteomicsDB',
 	'Transcription_Factor_PPIs', 'TRANSFAC_and_JASPAR_PWMs', 'Virus_Perturbations_from_GEO_down', 'Virus_Perturbations_from_GEO_up', 'VirusMINT', 'WikiPathways_2013', 'WikiPathways_2015', 'WikiPathways_2016']
+
+drp = ['Disease_Perturbations_from_GEO_down', 'Disease_Perturbations_from_GEO_up', 'Drug_Perturbations_from_GEO_down', 'Drug_Perturbations_from_GEO_up', 'ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X',
+	'Kinase_Perturbations_from_GEO_down', 'Kinase_Perturbations_from_GEO_up', 'Ligand_Perturbations_from_GEO_down', 'Ligand_Perturbations_from_GEO_up', 'LINCS_L1000_Chem_Pert_down',
+	'LINCS_L1000_Chem_Pert_up', 'LINCS_L1000_Kinase_Perturbations_down', 'LINCS_L1000_Kinase_Perturbations_up', 'LINCS_L1000_Ligand_Perturbations_down', 'LINCS_L1000_Ligand_Perturbations_up',
+	'MCF7_Perturbations_from_GEO_down', 'MCF7_Perturbations_from_GEO_up', 
+	'Old_CMAP_down', 'Old_CMAP_up', 'OMIM_Disease', 'OMIM_Expanded', 'Virus_Perturbations_from_GEO_down', 'Virus_Perturbations_from_GEO_up']
+
+standarddb = ['KEGG_2016', 'BioCarta_2016', 'WikiPathways_2016', 'Reactome_2016', 'GO_Biological_Process_2015', 'GO_Cellular_Component_2015', 'GO_Molecular_Function_2015', 'MSigDB_Computational', 'Panther_2016']
 
 def senddata(genes):
 	input = {
@@ -48,14 +55,17 @@ def askgenelist(id, inlist):
 	print('{} genes succesfully recognized by enrichR'.format(returnedN))
 
 def whichdb():
-	standarddb = ['KEGG_2016', 'BioCarta_2016', 'WikiPathways_2016', 'Reactome_2016', 'GO_Biological_Process_2015', 'GO_Cellular_Component_2015', 'GO_Molecular_Function_2015', 'MSigDB_Computational', 'Panther_2016']	
-	if len(sys.argv) >= 3:
+
+	if len(sys.argv) > 3:
 		chosendb = [db for db in sys.argv[2:] if db in databases]
 		if chosendb:
 			return chosendb
 		else:
 			print("Could not find a valid database in arguments, falling back on default databases.")
 			return standarddb
+	elif (sys.argv[2] == "drp"):
+		print("Using drp databases.")
+		return drp
 	else:
 		print("Using {} default databases.".format(len(standarddb)))
 		return standarddb
@@ -93,6 +103,7 @@ def getresults(id, gene_set_library):
 
 genelist = procesinput()				
 id = senddata(genelist)
+
 if os.path.isfile(sys.argv[1]):
 	fn = sys.argv[1] + ".xlsx"
 else:
@@ -103,7 +114,8 @@ for db in whichdb():
 	res = getresults(id, db)
 	df = pandas.read_table(io.StringIO(res))
 	df.to_excel(writer, sheet_name=db, index=False)
-	writer.save()
+
+writer.save()
 
 
 
